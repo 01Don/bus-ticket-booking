@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import "./welcome.css"
 
 function Welcome() {
   const [formData, setFormData] = useState({
@@ -39,7 +40,8 @@ function Welcome() {
   };
 
   return (
-    <div>
+    <div className='w-form'>
+      <h1>Check Bus Here</h1>
       <input
         type="text"
         name="from_location"

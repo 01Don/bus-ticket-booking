@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
+import "./bus.css";
+
 
 function Bus() {
   const location = useLocation();
@@ -98,7 +100,7 @@ function SelectSeats({ busId }) {
         </ul>
       )}
       {selectedSeat && (
-        <div>
+        <div className='selected-seat'>
           <p>Selected Seat: {selectedSeat.seat_number}</p>
           <button onClick={handleSeatBooking}>Book Seat</button>
         </div>

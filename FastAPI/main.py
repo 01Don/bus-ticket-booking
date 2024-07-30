@@ -43,6 +43,7 @@ class Bus(BaseModel):
     departure: str
     destination: str
     travel_date: str
+    fare: float
 
 class BusQuery(BaseModel):
     from_location: str
@@ -53,27 +54,35 @@ class BookSeatRequest(BaseModel):
     bus_id: int
     seat_number: str
 
+
 @app.post("/add_bus")
 async def add_bus(bus: Bus):
     try:
         with Database() as cursor:
             query = """
-                INSERT INTO buses (bus_name, departure, destination, travel_date)
-                VALUES (%s, %s, %s, %s)
+                INSERT INTO buses (bus_name, departure, destination, travel_date, fare)
+                VALUES (%s, %s, %s, %s, %s)
             """
-            cursor.execute(query, (bus.name, bus.departure, bus.destination, bus.travel_date))
-        return {"message": "Bus added successfully"}
+            cursor.execute(query, (bus.name, bus.departure, bus.destination, bus.travel_date, bus.fare))
+            bus_id = cursor.lastrowid
+
+            seat_query = "INSERT INTO seats (bus_id, seat_number, is_booked) VALUES (%s, %s, %s)"
+            for seat_number in range(1, bus.seats + 1):
+                cursor.execute(seat_query, (bus_id, seat_number, False))
+                
+        return {"message": "Bus and seats added successfully"}
     except mysql.connector.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/search_buses")
 async def search_buses(query: BusQuery):
     try:
         with Database() as cursor:
             query_string = """
-                SELECT bus_id, bus_name, departure, destination, travel_date 
+                SELECT bus_id, bus_name, departure, destination, travel_date, fare
                 FROM buses 
                 WHERE departure = %s AND destination = %s AND travel_date = %s
             """
@@ -118,7 +127,20 @@ async def book_seat(book_request: BookSeatRequest):
             # Mark the seat as booked
             update_query = "UPDATE seats SET is_booked = TRUE WHERE bus_id = %s AND seat_number = %s"
             cursor.execute(update_query, (book_request.bus_id, book_request.seat_number))
-        return {"message": "Seat booked successfully"}
+
+            # Fetch fare information
+            fare_query = "SELECT fare FROM buses WHERE bus_id = %s"
+            cursor.execute(fare_query, (book_request.bus_id,))
+            bus = cursor.fetchone()
+            if not bus:
+                raise HTTPException(status_code=404, detail="Bus not found")
+
+        return {
+            "message": "Seat booked successfully",
+            "bus_id": book_request.bus_id,
+            "seat_number": book_request.seat_number,
+            "fare": bus["fare"]
+        }
     except mysql.connector.Error as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
