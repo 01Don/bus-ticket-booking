@@ -40,10 +40,13 @@ class Database:
 
 class Bus(BaseModel):
     name: str
+    plate_no: str
+    bus_type: str
     departure: str
     destination: str
     travel_date: str
     fare: float
+    seats: int  # This is the number of seats to add to the `seats` table  # Added seats
 
 class BusQuery(BaseModel):
     from_location: str
@@ -59,13 +62,18 @@ class BookSeatRequest(BaseModel):
 async def add_bus(bus: Bus):
     try:
         with Database() as cursor:
+            # Insert the bus details into the buses table
             query = """
-                INSERT INTO buses (bus_name, departure, destination, travel_date, fare)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO buses (bus_name, plate_no, bus_type, departure, destination, travel_date, fare)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
             """
-            cursor.execute(query, (bus.name, bus.departure, bus.destination, bus.travel_date, bus.fare))
+            cursor.execute(query, (
+                bus.name, bus.plate_no, bus.bus_type, 
+                bus.departure, bus.destination, 
+                bus.travel_date, bus.fare))
             bus_id = cursor.lastrowid
 
+            # Insert seat details into the seats table
             seat_query = "INSERT INTO seats (bus_id, seat_number, is_booked) VALUES (%s, %s, %s)"
             for seat_number in range(1, bus.seats + 1):
                 cursor.execute(seat_query, (bus_id, seat_number, False))
@@ -75,8 +83,7 @@ async def add_bus(bus: Bus):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-
+    
 @app.post("/search_buses")
 async def search_buses(query: BusQuery):
     try:

@@ -4,11 +4,13 @@ import "./AddBus.css"
 function AddBus() {
   const [busData, setBusData] = useState({
     name: '',
+    plate_no: '',      // Include plate number
+    bus_type: '',      // Include bus type
     departure: '',
     destination: '',
     travel_date: '',
     fare: '',
-    seats: '', // Add seats to the state
+    seats: '',         // Seats are now included
   });
 
   const handleChange = (e) => {
@@ -28,9 +30,10 @@ function AddBus() {
 
       if (response.ok) {
         alert('Bus added successfully');
-        // Reset form fields
         setBusData({
           name: '',
+          plate_no: '',
+          bus_type: '',
           departure: '',
           destination: '',
           travel_date: '',
@@ -55,6 +58,20 @@ function AddBus() {
         name="name"
         placeholder="Bus Name"
         value={busData.name}
+        onChange={handleChange}
+      />
+      <input
+        type="text"
+        name="plate_no"
+        placeholder="Plate Number"
+        value={busData.plate_no}
+        onChange={handleChange}
+      />
+      <input
+        type="text"
+        name="bus_type"
+        placeholder="Bus Type"
+        value={busData.bus_type}
         onChange={handleChange}
       />
       <input

@@ -32,3 +32,9 @@ button:hover{
     border-style: none ;
     background-color: #242424;
 }
+
+@media (max-width: 1440px) {
+    input{
+      
+    }
+}
