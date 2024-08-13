@@ -1,9 +1,36 @@
-*{
-    margin: 0;
-}
-
-
-ul{
-    list-style: none;
-    left: 0;
-}
+/* bus.css */
+.seat-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .seat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    width: 100%;
+    justify-content: space-around;
+  }
+  
+  .seat {
+    width: 50px;
+    height: 50px;
+    background-color: lightgray;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  
+  .seat.selected {
+    background-color: green;
+    color: white;
+  }
+  
+  .selected-seat {
+    margin-top: 20px;
+  }
+  

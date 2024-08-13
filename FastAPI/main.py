@@ -57,6 +57,13 @@ class BookSeatRequest(BaseModel):
     bus_id: int
     seat_number: str
 
+class CompleteBookingRequest(BaseModel):
+    bus_id: int
+    seat_number: str
+    name: str
+    payment_method: str
+
+
 
 @app.post("/add_bus")
 async def add_bus(bus: Bus):
@@ -152,6 +159,66 @@ async def book_seat(book_request: BookSeatRequest):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/complete_booking")
+async def complete_booking(booking_request: CompleteBookingRequest):
+    try:
+        with Database() as cursor:
+            # Check if the seat is already booked
+            query = "SELECT is_booked FROM seats WHERE bus_id = %s AND seat_number = %s"
+            cursor.execute(query, (booking_request.bus_id, booking_request.seat_number))
+            seat = cursor.fetchone()
+            if not seat:
+                raise HTTPException(status_code=404, detail="Seat not found")
+            if seat["is_booked"]:
+                raise HTTPException(status_code=400, detail="Seat already booked")
+
+            # Mark the seat as booked
+            update_query = """
+                UPDATE seats 
+                SET is_booked = TRUE 
+                WHERE bus_id = %s AND seat_number = %s
+            """
+            cursor.execute(update_query, (booking_request.bus_id, booking_request.seat_number))
+
+            # Insert the booking details into a tickets table (or similar)
+            insert_query = """
+                INSERT INTO tickets (bus_id, seat_number, name, payment_method)
+                VALUES (%s, %s, %s, %s)
+            """
+            cursor.execute(insert_query, (
+                booking_request.bus_id,
+                booking_request.seat_number,
+                booking_request.name,
+                booking_request.payment_method
+            ))
+
+            # Fetch fare and bus name information
+            fare_query = "SELECT fare, bus_name, travel_date FROM buses WHERE bus_id = %s"
+            cursor.execute(fare_query, (booking_request.bus_id,))
+            bus = cursor.fetchone()
+            if not bus:
+                raise HTTPException(status_code=404, detail="Bus not found")
+
+            # Prepare the ticket data to return
+            ticket_data = {
+                "bus_name": bus["bus_name"],
+                "seat_number": booking_request.seat_number,
+                "name": booking_request.name,
+                "travel_date": bus["travel_date"],
+                "fare": bus["fare"],
+                "payment_method": booking_request.payment_method,
+            }
+
+        return ticket_data
+    except mysql.connector.Error as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 
 if __name__ == "__main__":
     import uvicorn
